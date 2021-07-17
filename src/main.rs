@@ -67,14 +67,14 @@ fn main() -> std::result::Result<(),()> {
     }
     /* Create tui */
     ncurses::initscr();
-    ncurses::mvaddstr(0, 0, &arg_str);
-    ncurses::mvaddstr(1, 0, "---");
     /* Start output routine */
     loop{
+        ncurses::clear();
         let mut strn = String::new();
+        ncurses::mvaddstr(0, 0, &arg_str);
+        ncurses::mvaddstr(1, 0, "---");
         let resstr = run_command(&shell, &command_str);
         strn.push_str(&resstr);
-        strn.push_str("\r");
         ncurses::mvaddstr(2, 0,&strn);
         ncurses::refresh();
         thread::sleep(Duration::new(2, 0));
