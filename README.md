@@ -16,9 +16,9 @@ cargo build
 or 
 
 ```
-cargo run [Command..]
+cargo run [Command]
 ```
 ### Usage
 ```
-watch [Command..]
+watch [Command]
 ```
