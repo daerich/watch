@@ -24,14 +24,13 @@ fn get_shell() -> std::string::String{
 }
 
 fn run_command(shell : &std::string::String, arg_str: &std::string::String) -> std::string::String{
-    let mut command = process::Command::new(shell.clone());
+    let mut command = process::Command::new(shell);
     command.arg("-i");
     command.arg("-c");
-    command.arg(arg_str.clone());
+    command.arg(arg_str);
     let (sn,rec) = mpsc::channel();
     std::thread::spawn(move || {
         let res = String::from_utf8(command.output().unwrap().stdout).unwrap();
-        print!("Res {:?}", res);
         sn.send(res).unwrap();   
     });
     let res = rec.recv().unwrap();
@@ -41,7 +40,7 @@ fn run_command(shell : &std::string::String, arg_str: &std::string::String) -> s
 fn main() -> std::result::Result<(),()> {
     
     if env::args().len() <= 1{
-        print!("USAGE:\n watch [COMMAND..]\n");
+        print!("USAGE:\n watch [COMMAND]\n");
         return Ok(());
     }
     let mut arg_str = String::new(); /* Create prompt string */
@@ -50,7 +49,6 @@ fn main() -> std::result::Result<(),()> {
         arg_str.push_str(&arg);
     }
     
-    //strn.push_str( &val.to_string());
     let shell = get_shell();
     /* Construct command string */
     let mut command_str = String::new();
