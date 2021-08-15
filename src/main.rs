@@ -8,15 +8,29 @@ use std::sync::mpsc;
 use std::ops::Add;
 use std::process::exit;
 
-fn get_shell() -> std::string::String{
+fn is_shell(shell:&str) -> bool{
+    let mut command = process::Command::new(shell); /* Check shell compatibilty */
+    command.arg("-i");
+    command.arg("-c");
+    command.arg(" ");
+    if let Ok(_) = command.status(){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+fn get_shell(sover:&str) -> std::string::String{
+
+    if !sover.is_empty(){ /* Check overrides */
+        if is_shell(sover){
+            return String::from(sover);
+        }
+    }
     for var in env::vars(){
-        if var.0 == "SHELL"{
-            let mut command = process::Command::new(&var.1); /* Check shell compatibilty */
-            command.arg("-i");
-            command.arg("-c");
-            command.arg(" ");
-            if command.status().unwrap().success(){
-            return var.1;
+        if var.0 == "SHELL"{ /* If not get primary/login shell */
+            if is_shell(&var.1){
+                return String::from(&var.1);
             }
             else {
                 return String::from("sh"); /* Choose POSIX if check fails*/
@@ -53,10 +67,14 @@ fn atoi(dur : &String) -> u64{
 }
 
 fn main() -> std::result::Result<(),()> {
+    /* VERSION: */
+    let VERSION = "1.2";
 
     let mut opts = getopts::Options::new();
     opts.parsing_style(getopts::ParsingStyle::StopAtFirstFree);
     opts.opt("n", "interval", "Set refresh interval", "Integer", getopts::HasArg::Yes, getopts::Occur::Optional);
+    opts.opt("s", "shell", "Override shell", "String", getopts::HasArg::Yes, getopts::Occur::Optional);
+    opts.opt("v", "version", "Print version and exit", "", getopts::HasArg::No, getopts::Occur::Optional);
     let optstring : Vec<String> = env::args().collect();
     
     if env::args().len() <= 1{
@@ -67,15 +85,24 @@ fn main() -> std::result::Result<(),()> {
     /* Construct program parameters */
     let durstr : String;
     let mut command_str = String::new();
+    let mut shell_ovrr = String::new();
 
     if let Ok(res) = opts.parse(&optstring[1..]){ /* argparse */
+
+        if res.opt_present("v"){
+            println!("hawk/watch\nVersion: {}\nBy DaErich",VERSION);
+            exit(0);
+            /* not reached */
+        }
         if res.opt_present("n") {
             durstr = res.opt_str("n").unwrap();
         }
         else{
             durstr = String::from("2");
         }
-
+        if res.opt_present("s"){
+            shell_ovrr.push_str(&res.opt_str("s").unwrap());
+        }
         let sanstr = res.free.clone(); /* Concat */
         for frag in sanstr{
             command_str.push_str(&frag);
@@ -83,7 +110,7 @@ fn main() -> std::result::Result<(),()> {
         }
     }
     else{
-        println!("Couldn't parse optstring!\nMaybe you used illegal arguments?\
+        println!("Couldn't parse Options!\nMaybe you used illegal arguments?\
         \nOr too many of them, or multiple times,or..Computer says no?");
         exit(1); /* Better than a ugly panic */
     };
@@ -94,12 +121,13 @@ fn main() -> std::result::Result<(),()> {
         arg_str.push_str(&arg);
     }
     
-    let shell = get_shell();
+    let shell = get_shell(&shell_ovrr);
     let duration = Duration::new(atoi(&durstr),0);
 
     /* Create tui */
     ncurses::initscr();
     let timestr =  String::from("Every ").add(&durstr).add(" seconds:");
+
     /* Start output routine */
     loop{
         ncurses::clear();
@@ -113,6 +141,6 @@ fn main() -> std::result::Result<(),()> {
         ncurses::refresh();
         thread::sleep(duration);
     }
-    ncurses::endwin(); /* Unreachable but call it anyways */ 
+    ncurses::endwin(); /* Unreachable but call it anyways */
     Ok(())
 }
