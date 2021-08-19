@@ -68,7 +68,7 @@ fn atoi(dur : &String) -> u64{
 
 fn main() -> std::result::Result<(),()> {
     /* VERSION: */
-    let VERSION = "1.2";
+    const VERSION : &str = "1.2";
 
     let mut opts = getopts::Options::new();
     opts.parsing_style(getopts::ParsingStyle::StopAtFirstFree);
@@ -126,7 +126,8 @@ fn main() -> std::result::Result<(),()> {
 
     /* Create tui */
     ncurses::initscr();
-    let timestr =  String::from("Every ").add(&durstr).add(" seconds:");
+    let timestr =  String::from("Every ").add(&duration.as_secs().to_string()).add(
+        || -> &str{ if duration.as_secs() == 1 {return " second"} else {return " seconds"}  }());
 
     /* Start output routine */
     loop{
