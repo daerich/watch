@@ -1,0 +1,47 @@
+.TH HAWK 1 2021-08-19 GNU/Linux "General Commands Manual"
+.SH NAME 
+hawk \- watch with environment heuristics 
+.SH SYNOPSIS
+.B hawk
+[OPTION..] [COMMAND]
+.SH DESCRIPTION
+hawk runs a command for n seconds (2 seconds by default)
+and displays its output, updated every interval.
+The shell is determined dynamically from the environment,
+which can be overriden by its environment variable or 
+a command line switch (
+.B -s
+).
+.SH OPTIONS
+.IP ""  1
+.I -n, --interval
+.I NUMBER
+ Set refresh interval in seconds(default is 2 seconds).
+
+.I -s, --shell 
+.I PATH
+ Set specific shell to be used instead.
+
+.B Note:
+If the shell doesn't support non interactive shell calls,
+a POSIX compliant shell is expected at command "sh".
+
+.I -v, --version
+ Print version information and exit successfully.
+
+.SH ENVIRONMENT
+.B $SHELL
+
+.I The shell to be used by default 
+.I (usually set by your initscripts).
+.SH RETURN STATUS
+Almost always exits successfully, unless you specify invalid options,
+numbers, commands. If you play it right, it will exit successfully...
+.SH AUTHORS
+Written by DaErich and tracked on 
+.UR https://github.com/daerich/watch
+GitHub
+.UE 
+.SH SEE ALSO
+watch(1)
+
