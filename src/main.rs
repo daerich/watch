@@ -20,7 +20,7 @@ fn is_shell(shell:&str) -> bool{
     }
 }
 
-fn get_shell(sover:&str) -> std::string::String{
+fn get_shell(sover:&str) -> String{
 
     if !sover.is_empty(){ /* Check overrides */
         if is_shell(sover){
@@ -40,18 +40,20 @@ fn get_shell(sover:&str) -> std::string::String{
     String::from("sh") /* Choose POSIX version */
 }
 
-fn run_command(shell : &std::string::String, arg_str: &std::string::String) -> std::string::String{
+fn run_command(shell : &String, arg_str: &String,duration:Duration) -> mpsc::Receiver<String>{
     let mut command = process::Command::new(shell);
     command.arg("-i");
     command.arg("-c");
     command.arg(arg_str);
     let (sn,rec) = mpsc::channel();
     std::thread::spawn(move || {
+        loop{
         let res = String::from_utf8(command.output().unwrap().stdout).unwrap();
-        sn.send(res).unwrap();   
+        sn.send(res).unwrap();
+        thread::sleep(duration);
+        } 
     });
-    let res = rec.recv().unwrap();
-    res
+    rec
 }
 
 fn atoi(dur : &String) -> u64{
@@ -68,7 +70,7 @@ fn atoi(dur : &String) -> u64{
 
 fn main() -> std::result::Result<(),()> {
     /* VERSION: */
-    const VERSION : &str = "1.2";
+    const VERSION : &str = "1.5";
 
     let mut opts = getopts::Options::new();
     opts.parsing_style(getopts::ParsingStyle::StopAtFirstFree);
@@ -130,15 +132,21 @@ fn main() -> std::result::Result<(),()> {
         || -> &str{ if duration.as_secs() == 1 {return " second"} else {return " seconds"}  }());
 
     /* Start output routine */
+    let mut resstr;
+    let mut receiver = run_command(&shell, &command_str,duration);
     loop{
+        resstr=String::new();
         ncurses::clear();
-        let mut strn = String::new();
         ncurses::mvaddstr(0, 0, &timestr);
         ncurses::mvaddstr(1, 0, &arg_str);
         ncurses::mvaddstr(2, 0, "---");
-        let resstr = run_command(&shell, &command_str);
-        strn.push_str(&resstr);
-        ncurses::mvaddstr(3, 0,&strn);
+        if let Ok(strn) = receiver.recv(){
+            resstr.push_str(&strn);
+        }else{
+            receiver=run_command(&shell, &command_str, duration);
+            resstr.push_str(&receiver.recv().expect("Cannot create new thread!Exiting!")) /* Try again, and exit if fubar  */
+        }
+        ncurses::mvaddstr(3, 0,&resstr);
         ncurses::refresh();
         thread::sleep(duration);
     }
