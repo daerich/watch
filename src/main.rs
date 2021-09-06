@@ -48,7 +48,18 @@ fn run_command(shell : &String, arg_str: &String,duration:Duration) -> mpsc::Rec
     let (sn,rec) = mpsc::channel();
     std::thread::spawn(move || {
         loop{
-        let res = String::from_utf8(command.output().unwrap().stdout).unwrap();
+        let res = if let Ok(value) = String::from_utf8(
+            if let Ok(value) = command.output(){ /* Stop thread on error (looks ugly) */
+                value.stdout
+            }
+            else{
+                break;
+            }){
+              value  
+            }
+            else{
+                break;
+            };
         sn.send(res).unwrap();
         thread::sleep(duration);
         } 
