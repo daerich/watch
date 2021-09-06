@@ -26,14 +26,27 @@ a command line switch (
 If the shell doesn't support non interactive shell calls,
 a POSIX compliant shell is expected at command "sh".
 
+.I --force-stdout
+ Force Standard Output on display
+
+.B Note:
+Normally hawk dynamically determines the output to
+be displayed, based on the command's exit status. If
+your command always prints to STDOUT regardless of
+its exit status use this option.
+
 .I -v, --version
  Print version information and exit successfully.
 
 .SH ENVIRONMENT
 .B $SHELL
 
-.I The shell to be used by default 
-.I (usually set by your initscripts).
+.I The shell to be used by default(usually set by your initscripts).
+
+.B $PATH
+
+.I Relied upon for shell resolution(for portability reasons)
+
 .SH RETURN STATUS
 Almost always exits successfully, unless you specify invalid options,
 numbers, commands. If you play it right, it will exit successfully...

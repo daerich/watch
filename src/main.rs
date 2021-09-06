@@ -40,7 +40,7 @@ fn get_shell(sover:&str) -> String{
     String::from("sh") /* Choose POSIX version */
 }
 
-fn run_command(shell : &String, arg_str: &String,duration:Duration) -> mpsc::Receiver<String>{
+fn run_command(shell : &String, arg_str: &String,duration:Duration, is_force:bool) -> mpsc::Receiver<String>{
     let mut command = process::Command::new(shell);
     command.arg("-i");
     command.arg("-c");
@@ -50,7 +50,12 @@ fn run_command(shell : &String, arg_str: &String,duration:Duration) -> mpsc::Rec
         loop{
         let res = if let Ok(value) = String::from_utf8(
             if let Ok(value) = command.output(){ /* Stop thread on error (looks ugly) */
-                value.stdout
+                if value.status.success()|| is_force{
+                     value.stdout
+                }
+                else{
+                     value.stderr
+                }
             }
             else{
                 break;
@@ -81,12 +86,13 @@ fn atoi(dur : &String) -> u64{
 
 fn main() -> std::result::Result<(),()> {
     /* VERSION: */
-    const VERSION : &str = "1.5";
+    const VERSION : &str = "1.7";
 
     let mut opts = getopts::Options::new();
     opts.parsing_style(getopts::ParsingStyle::StopAtFirstFree);
     opts.opt("n", "interval", "Set refresh interval", "Integer", getopts::HasArg::Yes, getopts::Occur::Optional);
     opts.opt("s", "shell", "Override shell", "String", getopts::HasArg::Yes, getopts::Occur::Optional);
+    opts.opt("", "force-stdout", "Force STDOUT", "String", getopts::HasArg::No, getopts::Occur::Optional);
     opts.opt("v", "version", "Print version and exit", "", getopts::HasArg::No, getopts::Occur::Optional);
     let optstring : Vec<String> = env::args().collect();
     
@@ -99,6 +105,7 @@ fn main() -> std::result::Result<(),()> {
     let durstr : String;
     let mut command_str = String::new();
     let mut shell_ovrr = String::new();
+    let stdout_forced;
 
     if let Ok(res) = opts.parse(&optstring[1..]){ /* argparse */
 
@@ -112,6 +119,12 @@ fn main() -> std::result::Result<(),()> {
         }
         else{
             durstr = String::from("2");
+        }
+        if res.opt_present("force-stdout"){
+            stdout_forced = true;
+        }
+        else{
+            stdout_forced = false;
         }
         if res.opt_present("s"){
             shell_ovrr.push_str(&res.opt_str("s").unwrap());
@@ -144,7 +157,7 @@ fn main() -> std::result::Result<(),()> {
 
     /* Start output routine */
     let mut resstr;
-    let mut receiver = run_command(&shell, &command_str,duration);
+    let mut receiver = run_command(&shell, &command_str, duration, stdout_forced);
     loop{
         resstr=String::new();
         ncurses::clear();
@@ -154,7 +167,7 @@ fn main() -> std::result::Result<(),()> {
         if let Ok(strn) = receiver.recv(){
             resstr.push_str(&strn);
         }else{
-            receiver=run_command(&shell, &command_str, duration);
+            receiver=run_command(&shell, &command_str, duration, stdout_forced);
             resstr.push_str(&receiver.recv().expect("Cannot create new thread!Exiting!")) /* Try again, and exit if fubar  */
         }
         ncurses::mvaddstr(3, 0,&resstr);
