@@ -86,7 +86,7 @@ fn atoi(dur : &String) -> u64{
 
 fn main() -> std::result::Result<(),()> {
     /* VERSION: */
-    const VERSION : &str = "1.7";
+    const VERSION : &str = env!("CARGO_PKG_VERSION");
 
     let mut opts = getopts::Options::new();
     opts.parsing_style(getopts::ParsingStyle::StopAtFirstFree);
@@ -97,7 +97,7 @@ fn main() -> std::result::Result<(),()> {
     let optstring : Vec<String> = env::args().collect();
     
     if env::args().len() <= 1{
-        let progstr = env::args().nth(0).unwrap() + " [OPTION]" + " [COMMAND]";
+        let progstr = optstring[0].clone() + " [OPTION]" + " [COMMAND]";
         println!("{}",opts.usage(&progstr));
         return Ok(());
     }
@@ -142,9 +142,9 @@ fn main() -> std::result::Result<(),()> {
     };
     
     let mut arg_str = String::new(); /* Create prompt string */
-    for arg in env::args(){
+    for arg in &optstring{
         arg_str.push_str(" ");
-        arg_str.push_str(&arg);
+        arg_str.push_str(arg);
     }
     
     let shell = get_shell(&shell_ovrr);
