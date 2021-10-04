@@ -141,12 +141,6 @@ fn main() -> std::result::Result<(),()> {
         exit(1); /* Better than a ugly panic */
     };
     
-    let mut arg_str = String::new(); /* Create prompt string */
-    for arg in &optstring{
-        arg_str.push_str(" ");
-        arg_str.push_str(arg);
-    }
-    
     let shell = get_shell(&shell_ovrr);
     let duration = Duration::new(atoi(&durstr),0);
 
@@ -156,13 +150,13 @@ fn main() -> std::result::Result<(),()> {
         || -> &str{ if duration.as_secs() == 1 {return " second"} else {return " seconds"}  }());
 
     /* Start output routine */
-    let mut resstr;
+    let mut resstr = String::new();
     let mut receiver = run_command(&shell, &command_str, duration, stdout_forced);
     loop{
-        resstr=String::new();
+        resstr.clear();
         ncurses::clear();
         ncurses::mvaddstr(0, 0, &timestr);
-        ncurses::mvaddstr(1, 0, &arg_str);
+        ncurses::mvaddstr(1, 0, &command_str);
         ncurses::mvaddstr(2, 0, "---");
         if let Ok(strn) = receiver.recv(){
             resstr.push_str(&strn);
